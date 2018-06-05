@@ -38,7 +38,8 @@ DOWNLOAD_DELAY = 1
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
 
-
+# LOG_FILE = "debug.log"
+# LOG_LEVEL = "DEBUG"
 
 # Override the default request headers:
 #DEFAULT_REQUEST_HEADERS = {
@@ -67,7 +68,8 @@ DOWNLOAD_DELAY = 1
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'douban.pipelines.DoubanPipeline': 300,
+    # 'douban.pipelines.DoubanPipeline': 300,
+    'douban.pipelines.DoubanImagePipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
