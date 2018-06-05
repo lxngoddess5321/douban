@@ -25,24 +25,24 @@ class DoubanspiderSpider(scrapy.Spider):
         #     callback=self.after_login
         # )
         # 如果不需要登录时使用下方代码
-        yield scrapy.Request(self.base_url + str(self.offset), callback=self.after_login)
+        yield scrapy.Request(self.base_url + "0", callback=self.after_login)
 
     def after_login(self, response):
         '''
         登录后执行方法（即爬虫主体方法）
         '''
         # 获取页面所有目标的集合数据
-        item_list = response.xpath("//div[@class='item']/div[@class='info']")
+        item_list = response.xpath("//div[@class='item']")
         for i in item_list:
             # 声明一个item对象
             item = DoubanItem()
             # 获取电影详细页面的url链接
-            detail_url = i.xpath("./div[@class='hd']/a/@href").extract()[0]
-            item["name"] = i.xpath("./div[@class='hd']/a/span/text()").extract()[0].replace(" ", "").replace("\xa0", "")
-            item["imgurl"] = i.xpath("//div[@class='item']/div[@class='pic']/a/img/@src").extract()[0]
-            item["actor"] = i.xpath("./div[@class='bd']/p[1]/text()").extract()[0].replace(" ", "").replace("\xa0", "").replace("\n", "")
-            item["m_type"] = i.xpath("./div[@class='bd']/p[1]/text()").extract()[1].replace(" ", "").replace("\xa0", "").replace("\n", "")
-            item["score"] = i.xpath("./div[@class='bd']/div[@class='star']/span[@class='rating_num']/text()").extract()[0]
+            detail_url = i.xpath("./div[@class='info']/div[@class='hd']/a/@href").extract()[0]
+            item["name"] = i.xpath("./div[@class='info']/div[@class='hd']/a/span/text()").extract()[0].replace(" ", "").replace("\xa0", "")
+            item["imgurl"] = i.xpath("./div[@class='pic']/a/img/@src").extract()[0]
+            item["actor"] = i.xpath("./div[@class='info']/div[@class='bd']/p[1]/text()").extract()[0].replace(" ", "").replace("\xa0", "").replace("\n", "")
+            item["m_type"] = i.xpath("./div[@class='info']/div[@class='bd']/p[1]/text()").extract()[1].replace(" ", "").replace("\xa0", "").replace("\n", "")
+            item["score"] = i.xpath("./div[@class='info']/div[@class='bd']/div[@class='star']/span[@class='rating_num']/text()").extract()[0]
             # 部分列表页上的电影存在无简介情况，所以做判断区别设置
             if len(i.xpath("./div[@class='bd']/p[@class='quote']/span[@class='inq']/text()")) > 0:
                 item["summary"] = i.xpath("./div[@class='bd']/p[@class='quote']/span[@class='inq']/text()").extract()[0]
@@ -50,11 +50,11 @@ class DoubanspiderSpider(scrapy.Spider):
                 item["summary"] = ""
             # 将详细页面的链接交给引擎，调用处理详细信息页面的方法处理页面数据
             yield scrapy.Request(url=detail_url, meta={"item_main": item}, callback=self.detail_page)
-        if self.offset < 25:
+        if self.offset < 250:
             self.offset += 25
-            next_url = self.base_url + str(self.offset)
-            # 递归执行自身，分析获取下一页的数据
-            yield scrapy.Request(next_url, callback=self.after_login)
+        next_url = self.base_url + str(self.offset)
+        # 递归执行自身，分析获取下一页的数据
+        yield scrapy.Request(next_url, callback=self.after_login)
 
     def detail_page(self, response):
         '''

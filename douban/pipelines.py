@@ -3,7 +3,7 @@ import redis
 import json
 import pymysql
 import os
-import requests
+import urllib.request as ur
 
 # Define your item pipelines here
 #
@@ -42,12 +42,7 @@ class DoubanPipeline(object):
         imgname = item["rankno"] + ".jpg"
         pathimgname = os.path.join(self.dirpath, imgname)
         # 调用requests模块的方法下载图片并写入到本地
-        with open(pathimgname, "wb") as img:
-            response = requests.get(item["imgurl"], stream=True)
-            for block in response.iter_content(1024):
-                if not block:
-                    break
-                img.write(block)
+        ur.urlretrieve(item["imgurl"], pathimgname)
         # 计数值自增
         self.num += 1
         return item
