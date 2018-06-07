@@ -1,33 +1,61 @@
 # -*- coding: utf-8 -*-
 import scrapy
 from douban.items import DoubanItem
+import urllib.request as ur
 
 
 class DoubanspiderSpider(scrapy.Spider):
+    handle_httpstatus_list = [404]
     name = 'doubanspider'
     allowed_domains = ['douban.com']
     offset = 0
     base_url = "https://movie.douban.com/top250?start="
     # 如果不需要登录时使用下方代码
-    start_urls = [base_url + "0"]
+    # start_urls = [base_url + "0"]
     # 需要登录时使用下方代码
-    # start_urls = ["https://accounts.douban.com/login"]
+    start_urls = ["https://accounts.douban.com/login"]
 
     def parse(self, response):
         '''
         爬虫启动时执行的方法
         '''
-        # 如果需要登录时使用下方两句
-        # form_data = {"form_email": "419345180@qq.com", "form_password": "Peng19921110"}
-        # return scrapy.FormRequest.from_response(
-        #     response,
-        #     formdata=form_data,
-        #     callback=self.after_login
-        # )
+        # 如果登录需要输入验证码时,使用以下if...else...包含的两段代码
+        if len(response.xpath("//img[@id='captcha_image']/@src")) > 0:
+            # 将验证码图片文件写到根目录下并命名为captcha.jpg
+            ur.urlretrieve(response.xpath("//img[@id='captcha_image']/@src").extract()[0],
+                           "/home/sedlice/PycharmProjects/douban/captcha.jpg")
+            authcode = input("输入验证码:")
+            capid = response.xpath("//input[@name='captcha-id']/@value").extract()[0]
+            # 传入带验证码的参数
+            form_data = {
+                "form_email": "419345180@qq.com",
+                "form_password": "Peng19921110",
+                "captcha-solution": authcode,
+                "captcha-id": capid
+            }
+            return scrapy.FormRequest.from_response(
+                response,
+                formdata=form_data,
+                callback=self.after_login
+            )
+        else:
+            # 如果登录无需验证码时
+            form_data = {
+                "form_email": "419345180@qq.com",
+                "form_password": "Peng19921110"
+            }
+            return scrapy.FormRequest.from_response(
+                response,
+                formdata=form_data,
+                callback=self.main_page
+            )
         # 如果不需要登录时使用下方代码
-        yield scrapy.Request(self.base_url + "0", callback=self.after_login)
+        # yield scrapy.Request(self.base_url + "0", callback=self.main_page)
 
     def after_login(self, response):
+        yield scrapy.Request(self.base_url + "0", callback=self.main_page)
+
+    def main_page(self, response):
         '''
         登录后执行方法（即爬虫主体方法）
         '''
@@ -54,7 +82,7 @@ class DoubanspiderSpider(scrapy.Spider):
             self.offset += 25
         next_url = self.base_url + str(self.offset)
         # 递归执行自身，分析获取下一页的数据
-        yield scrapy.Request(next_url, callback=self.after_login)
+        yield scrapy.Request(next_url, callback=self.main_page)
 
     def detail_page(self, response):
         '''
